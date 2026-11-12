@@ -19,13 +19,13 @@ cd pm25-clon
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python scripts\recover_data.py
-.\.venv\Scripts\dvc status
+.\.venv\Scripts\dvc commit data\raw\PRSA2017_Data_20130301-20170228.zip.dvc
 .\.venv\Scripts\python scripts\audit_dongsi.py
 .\.venv\Scripts\pre-commit install
 .\.venv\Scripts\pre-commit run --all-files
 ```
 
-La recuperación descarga el paquete oficial, comprueba ambos SHA-256 y extrae solo el ZIP original sin sobrescribir una versión diferente. Depende de la disponibilidad futura de UCI; si cambia el paquete, falla sin escribir datos y debe investigarse. El archivo `.dvc` fija también el identificador de contenido usado por DVC. No se ha configurado ni publicado un remoto DVC.
+La recuperación descarga el paquete oficial, comprueba ambos SHA-256 y extrae solo el ZIP original sin sobrescribir una versión diferente. Depende de la disponibilidad futura de UCI; si cambia el paquete, falla sin escribir datos y debe investigarse. El archivo `.dvc` fija también el identificador de contenido usado por DVC. No se ha configurado ni publicado un remoto DVC. Se probó la descarga y la auditoría en un clon local sin caché DVC compartida; `dvc commit` incorporó el archivo recuperado a la caché de ese clon. En este entorno, `dvc status` mostró el mensaje «There are no data or pipelines tracked in this project yet» incluso con el archivo `.dvc` presente; no se usa ese mensaje como prueba de integridad.
 
 ## Auditoría ejecutada
 

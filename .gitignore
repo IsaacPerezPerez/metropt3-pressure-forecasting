@@ -3,9 +3,6 @@ __pycache__/
 *.py[cod]
 /data/*
 !/data/raw/
-/data/raw/*
-!/data/raw/*.dvc
-!/data/raw/.gitignore
 artifacts/
 outputs/
 mlruns/

@@ -1,0 +1,5 @@
+FROM proyecto1-web@sha256:b685cc092ad12214874a01a86d101f243a7190d0ac165a243257d7d88cdd66d0
+USER root
+RUN pip install --no-cache-dir mlflow==2.22.0 pandas==2.2.3
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+WORKDIR /workspace

@@ -1,0 +1,70 @@
+{
+  "selected_run_id": "13e41b225750413a976d09f36a91ab69",
+  "persistence_mae_bar": 0.5451199413583829,
+  "results": [
+    {
+      "run_id": "b1862a2da6094b568d1585fff0d3d70f",
+      "name": "rnn-original-completa",
+      "architecture": "RNN",
+      "variant": "original",
+      "best_epoch": 5,
+      "mae_bar": 0.2840039869606933,
+      "rmse_bar": 0.6367835019035567,
+      "persistence_mae_bar": 0.5451199413583829,
+      "elapsed_seconds": 41.84303163200002,
+      "reload_batch_identical": true,
+      "device": "cpu",
+      "smoke": false,
+      "difference_mae_bar": -0.26111595439768964,
+      "difference_mae_percent": -47.900642516767135
+    },
+    {
+      "run_id": "b3bbe1f8dafa42e69a04770a06dbe06b",
+      "name": "rnn-ampliada-completa",
+      "architecture": "RNN",
+      "variant": "ampliada",
+      "best_epoch": 5,
+      "mae_bar": 0.4763073843673196,
+      "rmse_bar": 0.605150879285586,
+      "persistence_mae_bar": 0.5451199413583829,
+      "elapsed_seconds": 41.38017650799998,
+      "reload_batch_identical": true,
+      "device": "cpu",
+      "smoke": false,
+      "difference_mae_bar": -0.06881255699106331,
+      "difference_mae_percent": -12.623379144705197
+    },
+    {
+      "run_id": "4e37271a37b24c9ca46aa3d42ffa2817",
+      "name": "lstm-original-completa",
+      "architecture": "LSTM",
+      "variant": "original",
+      "best_epoch": 5,
+      "mae_bar": 0.3538384940428414,
+      "rmse_bar": 0.5051295747437619,
+      "persistence_mae_bar": 0.5451199413583829,
+      "elapsed_seconds": 82.57817583899998,
+      "reload_batch_identical": true,
+      "device": "cpu",
+      "smoke": false,
+      "difference_mae_bar": -0.19128144731554153,
+      "difference_mae_percent": -35.08979085206235
+    },
+    {
+      "run_id": "13e41b225750413a976d09f36a91ab69",
+      "name": "lstm-ampliada-completa",
+      "architecture": "LSTM",
+      "variant": "ampliada",
+      "best_epoch": 5,
+      "mae_bar": 0.2807360319524576,
+      "rmse_bar": 0.4092178885223426,
+      "persistence_mae_bar": 0.5451199413583829,
+      "elapsed_seconds": 86.46708707300002,
+      "reload_batch_identical": true,
+      "device": "cpu",
+      "smoke": false,
+      "difference_mae_bar": -0.2643839094059253,
+      "difference_mae_percent": -48.500135355002385
+    }
+  ]
+}

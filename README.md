@@ -1,6 +1,6 @@
-# Pronóstico de presión industrial — auditoría inicial
+# Pronóstico de presión industrial
 
-Proyecto universitario para pronosticar la presión de salida de los depósitos (`Reservoirs`, bar) de la unidad de producción de aire de un tren, usando MetroPT-3. Esta fase se limita a auditar los datos y diseñar el experimento: aún no implementa ni entrena modelos. El objetivo final conserva la comparación de RNN y LSTM, entrenamiento con Docker Compose, seguimiento con MLflow, pruebas e inferencia en Docker; son entregables futuros, no funcionalidades ya implementadas.
+Proyecto universitario para pronosticar la presión de salida de los depósitos (`Reservoirs`, bar) de la unidad de producción de aire de un tren, usando MetroPT-3. El proyecto incluye preprocesamiento causal y comparación de RNN y LSTM en validación con Docker y MLflow. La evaluación final de prueba y el servidor de inferencia quedan para una fase posterior.
 
 La metodología, la cadencia, los cortes, los resultados de persistencia y el diseño causal están en [docs/AUDITORIA_METROPT3.md](docs/AUDITORIA_METROPT3.md). Los resultados de Beijing permanecen en el historial, hasta el commit `ab0673a`.
 
@@ -45,7 +45,7 @@ El brazo original incluye `Reservoirs`, `Motor_current`, `Oil_temperature`, `COM
 .\.venv\Scripts\pre-commit run --all-files
 ```
 
-La salida completa y compacta por partición, incluidos los conteos por horizonte real en segundos, está en [docs/RESULTADOS_FASE02.json](docs/RESULTADOS_FASE02.json). En entrenamiento se retienen 440 342 ventanas y el MAE de persistencia es 0,552306 bar; en validación son 405 173 y 0,545120 bar. Las tres sensibilidades 7–16, 8–15 y 9–14 s producen 85 segmentos, 440 342 ventanas y MAE 0,552306 bar en entrenamiento. Esta comparación no aporta evidencia para revisar el umbral principal, aunque no establece que sea óptimo en otros datos. La comparación de redes, selección en validación y evaluación final reservada de prueba quedan para la fase siguiente. El diseño exploratorio de señales de la auditoría es histórico: esta fase usa las dos versiones especificadas aquí.
+La salida completa y compacta por partición, incluidos los conteos por horizonte real en segundos, está en [docs/RESULTADOS_FASE02.json](docs/RESULTADOS_FASE02.json). En entrenamiento se retienen 440 342 ventanas y el MAE de persistencia es 0,552306 bar; en validación son 405 173 y 0,545120 bar. Las tres sensibilidades 7–16, 8–15 y 9–14 s producen 85 segmentos, 440 342 ventanas y MAE 0,552306 bar en entrenamiento. Esta comparación no aporta evidencia para revisar el umbral principal, aunque no establece que sea óptimo en otros datos. La comparación de redes y selección en validación se describen en la fase 03; la evaluación final de prueba sigue reservada. El diseño exploratorio de señales de la auditoría es histórico: esta fase usa las dos versiones especificadas aquí.
 
 ## Fase 03: entrenamiento recurrente
 

@@ -1,0 +1,6 @@
+services:
+  train:
+    image: metropt3-cpu-diagnostic:git
+    environment:
+      OMP_NUM_THREADS: '4'
+      MKL_NUM_THREADS: '4'

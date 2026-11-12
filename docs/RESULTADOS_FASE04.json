@@ -1,0 +1,16 @@
+{
+  "winner_run_id": "13e41b225750413a976d09f36a91ab69",
+  "checkpoint_sha256": "5ef6067a30e856b3bf3c9805d8b1b0c0f945a415f07f3489e8e8605c73d575ee",
+  "cases": 650545,
+  "first_anchor": "2020-06-01T00:37:09.000000000",
+  "last_anchor": "2020-09-01T03:54:53.000000000",
+  "first_target": "2020-06-01T00:42:06.000000000",
+  "last_target": "2020-09-01T03:59:50.000000000",
+  "lstm_mae_bar": 0.36424184325906983,
+  "lstm_rmse_bar": 0.47835592812154937,
+  "persistence_mae_bar": 0.7082085082507745,
+  "persistence_rmse_bar": 0.8626001859538582,
+  "mae_improvement_bar": 0.3439666649917047,
+  "mae_improvement_percent": 48.56855869202678,
+  "evaluation_run_id": "af679ccd27304e2281247516d0f7d913"
+}

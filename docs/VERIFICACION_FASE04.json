@@ -1,0 +1,14 @@
+{
+  "sample": "scripts/example_request.py: 32 synthetic readings, 10 s apart",
+  "health_http_status": 200,
+  "prediction_http_status": 200,
+  "checkpoint_prediction_bar": 8.821163177490234,
+  "service_prediction_bar": 8.821163177490234,
+  "absolute_difference_bar": 0.0,
+  "tolerance_bar": 1E-05,
+  "invalid_http_status": 422,
+  "invalid_detail": "Se requieren exactamente 32 lecturas consecutivas",
+  "tracking_server": "tested with --network none and only the exported local model mounted; existing MLflow UI remained running",
+  "image": "Dockerfile.inference built from python:3.11-slim with PyTorch CPU; Compose on localhost:8000",
+  "reconstruction": "freeze and MLflow export rerun successfully in the public CPU image"
+}

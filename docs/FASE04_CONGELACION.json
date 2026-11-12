@@ -1,0 +1,66 @@
+{
+  "winner_run_id": "13e41b225750413a976d09f36a91ab69",
+  "source_commit": "8db576e7cc03f20ed629c0d79679b684922ad9d0",
+  "artifact_sha256": {
+    "best.pt": "5ef6067a30e856b3bf3c9805d8b1b0c0f945a415f07f3489e8e8605c73d575ee",
+    "scaler.json": "2bd48d8309d50d55c225420fddbc9a3e97572d4b30ea8cd4178b03af0dc4d1f0",
+    "schema.json": "edcdf6271c0827d0eaf76a52baef7959611f61677d48884c23fee2260885629c",
+    "result.json": "e43d36d0c128d3ec2fa9f6513f77891e2dfa481d3704eac6dc51cdc52675ed2f",
+    "requirements-freeze.txt": "a8654552d2dae90eb099f9476450157f1ff72d7ab6529c8d06e81ea7a0714bc8"
+  },
+  "scaler": {
+    "columns": [
+      "Reservoirs",
+      "Motor_current",
+      "Oil_temperature",
+      "COMP",
+      "Reservoirs_mean_3",
+      "Reservoirs_rate_bar_s"
+    ],
+    "mean": [
+      9.003989323304713,
+      1.675491678324503,
+      59.3497670970561,
+      0.0,
+      9.003810736512454,
+      1.793775516401207e-05
+    ],
+    "std": [
+      0.5941837390204929,
+      2.2099363377143733,
+      6.343319396148412,
+      1.0,
+      0.5935477920287097,
+      0.005745877175566987
+    ],
+    "fit": "mean and population standard deviation of finite training rows used by at least one training window; COMP unchanged"
+  },
+  "schema": {
+    "columns": [
+      "Reservoirs",
+      "Motor_current",
+      "Oil_temperature",
+      "COMP",
+      "Reservoirs_mean_3",
+      "Reservoirs_rate_bar_s"
+    ],
+    "history": 30,
+    "target": "Reservoirs",
+    "target_unit": "bar",
+    "horizon_seconds": 300
+  },
+  "validation_batch_size": 512,
+  "validation_batch_local_mlflow_identical": true,
+  "validation_batch_prediction_sha256_float32": "974549821b0df77a37ed5977a7faf0a4c16417b072287638c88e62aafdc8e381",
+  "rules": {
+    "raw_readings": 32,
+    "interval_seconds_inclusive": [
+      8,
+      15
+    ],
+    "naive_timestamps": true,
+    "features": "30 rows; mean of current and two preceding Reservoirs; rate over actual preceding interval",
+    "target": "nearest to t+300 s within 5 s, earlier on tie; same segment and partition",
+    "finite": "all six features in window and target Reservoirs"
+  }
+}

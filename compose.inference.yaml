@@ -1,0 +1,10 @@
+services:
+  inference:
+    image: metropt3-inference:phase04
+    build:
+      context: .
+      dockerfile: Dockerfile.inference
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs/metropt3_model:/model:ro

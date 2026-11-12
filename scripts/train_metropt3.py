@@ -104,13 +104,14 @@ def run(architecture, augmented, device, smoke=False):
         (out / 'scaler.json').write_text(json.dumps(scaler, indent=2), encoding='utf-8')
         (out / 'schema.json').write_text(json.dumps({'columns': columns, 'history': HISTORY, 'target': 'Reservoirs',
             'target_unit': 'bar', 'horizon_seconds': 300}, indent=2), encoding='utf-8')
+        (out / 'requirements-freeze.txt').write_text(subprocess.check_output([os.sys.executable, '-m', 'pip', 'freeze'], text=True), encoding='utf-8')
         script_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
         source_commit = subprocess.check_output(['git', '-c', 'safe.directory=*', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
         source_dirty = bool(subprocess.check_output(['git', '-c', 'safe.directory=*', 'status', '--porcelain', '--untracked-files=no'], cwd=ROOT, text=True).strip())
         params = dict(CONFIG, architecture=architecture, variant=kind, columns=json.dumps(columns),
                       dataset_sha256=SHA256, train_end='2020-04-01', validation_end='2020-06-01',
                       test_start='2020-06-01', device=str(device), device_name=(torch.cuda.get_device_name(0)
-                      if device.type == 'cuda' else 'CPU'), torch_version=torch.__version__,
+                      if device.type == 'cuda' else 'CPU'), torch_version=torch.__version__, torch_threads=torch.get_num_threads(),
                       source_commit=source_commit, source_dirty=source_dirty, script_sha256=script_hash, run_type='smoke' if smoke else 'full')
         mlflow.log_params({k: str(v) for k, v in params.items()})
         mlflow.log_metric('persistence_mae_bar', persistence)

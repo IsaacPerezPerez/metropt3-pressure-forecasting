@@ -1,0 +1,109 @@
+{
+  "config": {
+    "history": 30,
+    "horizon_seconds": 300,
+    "tolerance_seconds": 5,
+    "continuity_seconds": [
+      8,
+      15
+    ],
+    "scaling": null
+  },
+  "train": {
+    "segments": 85,
+    "windows": 440342,
+    "base_columns": [
+      "Reservoirs",
+      "Motor_current",
+      "Oil_temperature",
+      "COMP"
+    ],
+    "augmented_columns": [
+      "Reservoirs",
+      "Motor_current",
+      "Oil_temperature",
+      "COMP",
+      "Reservoirs_mean_3",
+      "Reservoirs_rate_bar_s"
+    ],
+    "base_shape": [
+      440342,
+      30,
+      4
+    ],
+    "augmented_shape": [
+      440342,
+      30,
+      6
+    ],
+    "horizon_seconds_counts": {
+      "297": 274575,
+      "298": 165422,
+      "299": 171,
+      "300": 84,
+      "301": 46,
+      "302": 35,
+      "303": 9
+    },
+    "persistence_mae_bar": 0.5523061256932112
+  },
+  "validation": {
+    "segments": 115,
+    "windows": 405173,
+    "base_columns": [
+      "Reservoirs",
+      "Motor_current",
+      "Oil_temperature",
+      "COMP"
+    ],
+    "augmented_columns": [
+      "Reservoirs",
+      "Motor_current",
+      "Oil_temperature",
+      "COMP",
+      "Reservoirs_mean_3",
+      "Reservoirs_rate_bar_s"
+    ],
+    "base_shape": [
+      405173,
+      30,
+      4
+    ],
+    "augmented_shape": [
+      405173,
+      30,
+      6
+    ],
+    "horizon_seconds_counts": {
+      "295": 9,
+      "296": 26,
+      "297": 239175,
+      "298": 142515,
+      "299": 176,
+      "300": 477,
+      "301": 6335,
+      "302": 11883,
+      "303": 4373,
+      "304": 195,
+      "305": 9
+    },
+    "persistence_mae_bar": 0.5451199413583827
+  },
+  "sensitivity_train": {
+    "7-16": {
+      "segments": 85,
+      "windows": 440342,
+      "persistence_mae_bar": 0.5523061256932112
+    },
+    "8-15": {
+      "segments": 85,
+      "windows": 440342,
+      "persistence_mae_bar": 0.5523061256932112
+    },
+    "9-14": {
+      "segments": 85,
+      "windows": 440342,
+      "persistence_mae_bar": 0.5523061256932112
+    }
+  }
+}

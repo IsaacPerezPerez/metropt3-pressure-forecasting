@@ -32,3 +32,17 @@ No hay remoto DVC configurado: `dvc pull` no recupera estos datos por sí solo. 
 Se verificó el recuperador desde UCI y `dvc commit` en un clon local independiente, sin caché inicial ni caché compartida. En otro clon independiente se verificó `dvc pull` utilizando un remoto local temporal poblado con `dvc push`: en ambos casos el SHA-256 coincidió y `dvc status` quedó actualizado. Ese remoto fue solo una prueba y no está configurado para distribución. Los clones se prepararon desde `ab0673a` aplicando los cambios locales aún sin commit.
 
 En Windows, el antiguo patrón `/data/*` de `.gitignore` hacía que DVC 3.66.1 omitiera el directorio al buscar etapas y mostrara «There are no data or pipelines tracked in this project yet.» Se retiró ese patrón; la exclusión del paquete se mantiene en `data/raw/.gitignore`. Se verificó el descriptor expresamente: con el archivo presente DVC indica «Data and pipelines are up to date.»; al retirarlo temporalmente lo identifica como `deleted`. El historial conserva el descriptor de Beijing.
+
+## Fase 02: preprocesamiento reproducible
+
+La configuración ejecutable está en `scripts/preprocess_metropt3.py`; genera índices de ancla y etiqueta compartidos y materializa cada ventana solo cuando se solicita. Cada caso usa 30 lecturas hasta el ancla, el objetivo medido más próximo a 300 s (±5 s; empate hacia la lectura anterior), intervalos de 8–15 s y los cortes temporales de la auditoría. Se reinician señales y segmentos en cada corte; las dos lecturas previas al inicio de la ventana también deben pertenecer al segmento y a la partición. Se excluyen ventanas con valores no finitos en cualquier canal y objetivos de presión no finitos. No se interpola ni se escala. La fuente describe COMP como señal de la válvula de admisión; su disponibilidad operacional requiere validación.
+
+El brazo original incluye `Reservoirs`, `Motor_current`, `Oil_temperature`, `COMP`; el ampliado agrega `Reservoirs_mean_3` y `Reservoirs_rate_bar_s`, en ese orden. El promedio incluye la lectura actual y dos anteriores; la tasa usa el tiempo realmente transcurrido. `Cases.window(i, augmented=False/True)` y `Cases.label(i)` recuperan cada caso de los mismos índices. Las formas reportadas son lógicas, no arreglos densos guardados. No se consultan métricas de prueba: el lector termina al llegar al corte de junio.
+
+```powershell
+.\.venv\Scripts\python scripts\preprocess_metropt3.py
+.\.venv\Scripts\python -m unittest discover -s tests -v
+.\.venv\Scripts\pre-commit run --all-files
+```
+
+La salida completa y compacta por partición, incluidos los conteos por horizonte real en segundos, está en [docs/RESULTADOS_FASE02.json](docs/RESULTADOS_FASE02.json). En entrenamiento se retienen 440 342 ventanas y el MAE de persistencia es 0,552306 bar; en validación son 405 173 y 0,545120 bar. Las tres sensibilidades 7–16, 8–15 y 9–14 s producen 85 segmentos, 440 342 ventanas y MAE 0,552306 bar en entrenamiento. Esta comparación no aporta evidencia para revisar el umbral principal, aunque no establece que sea óptimo en otros datos. La comparación de redes, selección en validación y evaluación final reservada de prueba quedan para la fase siguiente. El diseño exploratorio de señales de la auditoría es histórico: esta fase usa las dos versiones especificadas aquí.

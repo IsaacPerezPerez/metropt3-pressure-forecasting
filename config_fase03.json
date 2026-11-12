@@ -1,0 +1,15 @@
+{
+  "phase02_commit": "1d832353ccf874b7c518a79aef91fd9120c39c67",
+  "seed": 2026,
+  "batch_size": 512,
+  "epochs": 5,
+  "hidden_size": 32,
+  "layers": 1,
+  "optimizer": "Adam",
+  "learning_rate": 0.001,
+  "loss": "MSE",
+  "checkpoint": "minimum full-validation MAE; first epoch on exact tie",
+  "scaling": "mean and population standard deviation of finite training rows used by at least one training window; COMP unchanged",
+  "horizon_seconds": 300,
+  "history": 30
+}

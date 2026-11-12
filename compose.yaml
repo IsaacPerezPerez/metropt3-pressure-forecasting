@@ -1,0 +1,11 @@
+services:
+  train:
+    build: .
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      - CUBLAS_WORKSPACE_CONFIG=:4096:8
+    gpus: all
+    ipc: host
+    command: python scripts/train_metropt3.py --help

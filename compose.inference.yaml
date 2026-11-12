@@ -5,6 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile.inference
     ports:
-      - "8000:8000"
+      - "${INFERENCE_PORT:-8000}:8000"
     volumes:
       - ./outputs/metropt3_model:/model:ro

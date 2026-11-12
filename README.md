@@ -67,6 +67,10 @@ docker compose run --rm --service-ports -p 5000:5000 train mlflow ui --backend-s
 
 Abrir `http://localhost:5000` para consultar MLflow. Los directorios `mlruns/`, `artifacts/` y `outputs/` son locales y están excluidos de Git. La selección usa MAE sin redondear; un empate exacto favorece entradas originales y después RNN. Las métricas de las corridas completas usan toda la validación y nunca el tramo de prueba. Consultar [docs/FASE03.md](docs/FASE03.md) para el estado y resultados efectivamente verificados.
 
+## Efecto de las señales en validación
+
+La media causal de tres lecturas y la tasa de cambio de presión se añadieron a las cuatro señales originales. En validación, el MAE de la RNN pasó de 0.284004 a 0.476307 bar (subió 67.71 %), mientras que el de la LSTM pasó de 0.353838 a 0.280736 bar (bajó 20.66 %). Son resultados de estas corridas, no una garantía general. La selección se hizo con validación, antes de consultar prueba. Véase [FASE03.md](docs/FASE03.md).
+
 ## Fase 04: evaluación final e inferencia CPU
 
 El ganador de fase 03 se congeló antes de leer prueba: [manifiesto con SHA-256, escalador y esquema](docs/FASE04_CONGELACION.json). El checkpoint `best.pt` (época 5) tiene SHA-256 `5ef6067a30e856b3bf3c9805d8b1b0c0f945a415f07f3489e8e8605c73d575ee`; sus cinco archivos coinciden con los del run `13e41b225750413a976d09f36a91ab69`. Se recalculó el escalador con entrenamiento y las dos copias del checkpoint generaron exactamente el mismo lote de 512 casos de validación. La comparación original del modelo en memoria con su checkpoint consta en la fase 03; el modelo en memoria ya no existe para repetirla.
@@ -85,6 +89,7 @@ La reducción de MAE es **0.343967 bar (48.57 %)** respecto de persistencia. Val
 El endpoint `POST /predict` recibe `{"readings": [...]}` con exactamente 32 objetos, ordenados cronológicamente. Cada objeto contiene exclusivamente `timestamp` ISO 8601 sin zona horaria (por ejemplo `2020-07-01T00:00:00`), `Reservoirs` (bar), `Motor_current`, `Oil_temperature` y `COMP`, estos cuatro como números finitos. Los intervalos consecutivos deben estar entre 8 y 15 segundos inclusive; no deben cruzar los cortes 2020-04-01 o 2020-06-01. No se interpola. Las dos primeras lecturas aportan historia causal y las 30 restantes forman la entrada: media móvil de tres y diferencia de presión dividida por el intervalo real; después se aplica el escalador congelado. La salida incluye `prediction_bar`, `target`, `horizon_seconds`, `anchor_timestamp` y `forecast_timestamp` para t + 300 s. El ejemplo sintético de 32 filas se genera y envía sin dependencias adicionales:
 
 ```powershell
+# Primero instale el ZIP como se indica en la siguiente sección.
 docker compose -f compose.inference.yaml up -d --build
 Invoke-RestMethod http://localhost:8000/health
 python scripts/example_request.py
@@ -92,16 +97,32 @@ python scripts/example_request.py
 
 El servicio carga `outputs/metropt3_model` desde un montaje de solo lectura y no requiere servidor de tracking, dataset ni GPU. La imagen se construye con Python público y PyTorch CPU. La comparación de la petición de ejemplo contra el checkpoint local usa tolerancia absoluta de 0.00001 bar; la verificación observada y el rechazo HTTP 422 están en [VERIFICACION_FASE04.json](docs/VERIFICACION_FASE04.json). Para detenerlo: `docker compose -f compose.inference.yaml down`.
 
-### Recuperar o reconstruir el paquete
+### Distribución e instalación del modelo
 
-El dataset, los checkpoints, el paquete exportado y `mlruns/` están fuera de Git; no hay remoto configurado para distribuir el ganador. Para otro equipo se necesita transferir por un canal confiable **el paquete completo** `outputs/metropt3_model/` de esta ejecución, o los cinco archivos originales de `artifacts/13e41b225750413a976d09f36a91ab69/` y sus copias en `mlruns/537000561928021549/13e41b225750413a976d09f36a91ab69/artifacts/`. Comprobar cada SHA-256 del manifiesto antes de confiar en ellos. El código por sí solo no recupera el checkpoint exacto; volver a entrenar es una corrida distinta y no garantiza el mismo hash. La disponibilidad y transferencia de esos archivos sigue pendiente para un clon limpio.
+El paquete versionado `metropt3-inference-v1.0.0.zip` tiene SHA-256 **`2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f`**. Se preparó para adjuntarlo a una futura GitHub Release; todavía no hay Release ni enlace de descarga publicado. Una vez publicada, descargue el ZIP desde los activos de esa Release y verifique este hash obtenido de una fuente confiable. Hasta entonces, transfiera el ZIP local por un canal confiable. El manifiesto interno identifica el run, los commits de procedencia, el checkpoint y todos los archivos del modelo. El hash del ZIP es la referencia externa: los hashes dentro del ZIP por sí solos no autentican su origen. Solo cargue paquetes confiables: MLflow utiliza serialización de Python.
 
-Para reconstruir desde los cinco archivos originales, recuperar también el ZIP UCI según la sección anterior, y construir la imagen CPU pública y ejecutar los siguientes comandos desde la raíz del clon:
+En un clon limpio, con Python 3.11 y Docker Desktop, para instalar desde una ruta local y ejecutar únicamente la demo (sin dataset ni servidor MLflow):
 
 ```powershell
-docker compose -f compose.inference.yaml build
-docker run --rm -v "${PWD}:/workspace" -w /workspace --entrypoint python metropt3-inference:phase04 scripts/freeze_metropt3.py
-docker run --rm -v "${PWD}:/workspace" -w /workspace --entrypoint python metropt3-inference:phase04 scripts/export_metropt3.py
+python scripts/release_metropt3.py install C:\ruta\metropt3-inference-v1.0.0.zip --sha256 2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f
+$env:INFERENCE_PORT = "18080" # elegir un puerto libre
+docker compose -f compose.inference.yaml up -d --build
+Invoke-RestMethod http://localhost:18080/health
+python scripts/example_request.py --url http://localhost:18080
+try { Invoke-RestMethod -Method Post -Uri http://localhost:18080/predict -ContentType 'application/json' -Body '{"readings":[]}' } catch { $_.ErrorDetails.Message }
+docker compose -f compose.inference.yaml down
 ```
 
-El primer comando coteja las copias, verifica esquema y escalador y reproduce el lote de validación; el segundo verifica los hashes congelados y crea el modelo MLflow local. La imagen de inferencia se define desde una base pública. `scripts/evaluate_metropt3.py` reproduce la evaluación con los artefactos congelados y registra un nuevo run; no debe usarse para ajustar o seleccionar el modelo con prueba.
+La prueba independiente y sus comandos están en [VERIFICACION_RELEASE.md](docs/VERIFICACION_RELEASE.md). La respuesta válida esperada para el ejemplo es `prediction_bar = 8.821163177490234`, con tolerancia absoluta de **0.00001 bar** respecto al checkpoint de fase 04; la petición vacía devuelve HTTP 422. El instalador comprueba el hash antes de extraer, valida cada archivo y no sustituye un destino existente. El ZIP, el modelo, los checkpoints, el dataset y `mlruns/` permanecen fuera de Git.
+
+Para reconstruir el ZIP a partir del modelo exportado local verificado (compruebe el SHA-256 resultante; las versiones de compresión pueden afectarlo):
+
+```powershell
+python scripts/release_metropt3.py build outputs/release/metropt3-inference-v1.0.0.zip
+```
+
+El contenido exportado incluye el checkpoint, escalador, esquema, código y metadatos MLflow. Si solo se conservan los cinco artefactos originales y sus copias de MLflow, el procedimiento de fase 04 requiere también recuperar el dataset UCI de la sección «Reproducir en Windows PowerShell» y ejecutar `scripts/freeze_metropt3.py` y `scripts/export_metropt3.py` en la imagen CPU. Sin el checkpoint original, reentrenar no garantiza recuperar sus pesos o hash. Para reproducir el entrenamiento completo recupere el dataset oficial como se explica arriba y siga los comandos de fase 03; la demo necesita solo el ZIP.
+
+### Pruebas y CI
+
+El workflow [CI CPU](.github/workflows/ci.yml) instala Python 3.11, dependencias y PyTorch CPU, y ejecuta `python -m unittest discover -s tests -v` y `pre-commit run --all-files` en cada push y pull request. Las pruebas usan datos sintéticos y no necesitan dataset, pesos ni tracking local; comprueban también la instalación y el rechazo de paquetes incorrectos. La comparación de la predicción real del ganador se realiza aparte mediante la integración Docker y el ZIP verificado: CI no la ejecuta. El workflow se agregó localmente y su ejecución remota está pendiente de un push autorizado.

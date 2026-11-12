@@ -1,4 +1,5 @@
 """Send an executable synthetic request; no dataset is required."""
+import argparse
 import datetime
 import json
 import urllib.request
@@ -12,8 +13,11 @@ def sample():
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--url', default='http://localhost:8000')
+    args = parser.parse_args()
     payload = json.dumps({'readings': sample()}).encode()
-    req = urllib.request.Request('http://localhost:8000/predict', data=payload,
+    req = urllib.request.Request(args.url.rstrip('/') + '/predict', data=payload,
                                  headers={'Content-Type': 'application/json'})
     with urllib.request.urlopen(req) as response:
         print(response.read().decode())

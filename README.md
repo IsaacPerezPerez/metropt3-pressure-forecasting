@@ -46,3 +46,23 @@ El brazo original incluye `Reservoirs`, `Motor_current`, `Oil_temperature`, `COM
 ```
 
 La salida completa y compacta por partición, incluidos los conteos por horizonte real en segundos, está en [docs/RESULTADOS_FASE02.json](docs/RESULTADOS_FASE02.json). En entrenamiento se retienen 440 342 ventanas y el MAE de persistencia es 0,552306 bar; en validación son 405 173 y 0,545120 bar. Las tres sensibilidades 7–16, 8–15 y 9–14 s producen 85 segmentos, 440 342 ventanas y MAE 0,552306 bar en entrenamiento. Esta comparación no aporta evidencia para revisar el umbral principal, aunque no establece que sea óptimo en otros datos. La comparación de redes, selección en validación y evaluación final reservada de prueba quedan para la fase siguiente. El diseño exploratorio de señales de la auditoría es histórico: esta fase usa las dos versiones especificadas aquí.
+
+## Fase 03: entrenamiento recurrente
+
+El código usa los índices de fase 02 y deja reservado el periodo desde 2020-06-01. El archivo [config_fase03.json](config_fase03.json) fija cinco épocas, Adam, lote 512, semilla 2026 y una capa unidireccional de 32 unidades. Se normalizan las columnas continuas usando exclusivamente filas únicas de entrenamiento incluidas en ventanas; COMP permanece sin escalar. El objetivo está en bar. Las ventanas se construyen por lote. Cada corrida guarda el mejor checkpoint por MAE de validación, el escalador y el esquema en `artifacts/<run_id>/`, además de registrarlos en MLflow. La corrida `--smoke` usa solo 4096 casos por partición durante una época y no debe utilizarse para seleccionar el modelo.
+
+Con Docker Desktop y GPU NVIDIA habilitada, desde PowerShell:
+
+```powershell
+docker compose build train
+docker compose run --rm train python -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0)); print((torch.ones(1, device='cuda') + 1).cpu())"
+docker compose run --rm train python scripts/train_metropt3.py --smoke
+docker compose run --rm train python scripts/train_metropt3.py --architecture RNN
+docker compose run --rm train python scripts/train_metropt3.py --architecture RNN --augmented
+docker compose run --rm train python scripts/train_metropt3.py --architecture LSTM
+docker compose run --rm train python scripts/train_metropt3.py --architecture LSTM --augmented
+docker compose run --rm train python scripts/select_metropt3.py <run_id_rnn_original> <run_id_rnn_ampliada> <run_id_lstm_original> <run_id_lstm_ampliada>
+docker compose run --rm --service-ports -p 5000:5000 train mlflow ui --backend-store-uri file:///workspace/mlruns --host 0.0.0.0 --port 5000
+```
+
+Abrir `http://localhost:5000` para consultar MLflow. Los directorios `mlruns/`, `artifacts/` y `outputs/` son locales y están excluidos de Git. La selección usa MAE sin redondear; un empate exacto favorece entradas originales y después RNN. Las métricas de las corridas completas usan toda la validación y nunca el tramo de prueba. Consultar [docs/FASE03.md](docs/FASE03.md) para el estado y resultados efectivamente verificados.

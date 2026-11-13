@@ -67,6 +67,15 @@ docker compose run --rm --service-ports -p 5000:5000 train mlflow ui --backend-s
 
 Abrir `http://localhost:5000` para consultar MLflow. Los directorios `mlruns/`, `artifacts/` y `outputs/` son locales y están excluidos de Git. La selección usa MAE sin redondear; un empate exacto favorece entradas originales y después RNN. Las métricas de las corridas completas usan toda la validación y nunca el tramo de prueba. Consultar [docs/FASE03.md](docs/FASE03.md) para el estado y resultados efectivamente verificados.
 
+### Recorrido de la demo en MLflow 2.22.0
+
+Con la instancia local en marcha, abra [MLflow](http://127.0.0.1:5000). Si debe iniciarla con la imagen CPU local ya disponible, use el comando de la sección «Docker, CUDA y pruebas» de [FASE03.md](docs/FASE03.md). Este recorrido necesita el directorio `mlruns/` de esta instancia; no se incluye en Git.
+
+1. Abra `metropt3-fase03` (ID `537000561928021549`) y lea su descripción. En la pestaña **Runs**, escriba `params.run_type = 'full'` en el cuadro de búsqueda y pulse **Enter**: deben aparecer cuatro corridas. En **Columns**, dentro de **Metrics**, marque `best_mae_bar` y `best_rmse_bar`; cierre el menú y, si hace falta, desplace la tabla horizontalmente hacia la derecha. El menor MAE de validación corresponde a `lstm-ampliada-completa`, run `13e41b225750413a976d09f36a91ab69`. El RMSE acompaña la comparación, pero no fue el criterio de selección.
+2. Abra `metropt3-fase04` (ID `545137120009382204`) y después `evaluacion-final-ganador` (run `af679ccd27304e2281247516d0f7d913`). **Overview** muestra la descripción, los parámetros y las métricas de prueba. En **Artifacts**, seleccione `comparacion_mae_prueba.png` para ver las dos barras de MAE en bar. `RESULTADOS_FASE04.json` conserva la precisión completa y `FASE04_CONGELACION.json` identifica el modelo congelado.
+
+Para ordenar, abra **Sort**, elija `best_mae_bar`, vuelva a abrir **Sort** y pulse **Sort ascending**. El filtro y el orden forman parte de la URL; las columnas pueden depender de la sesión del navegador. Si no aparecen al volver a abrir MLflow, repita el paso 1. La gráfica y las descripciones se guardaron en el almacenamiento local de MLflow. Para reconstruirlas en esta misma instancia, con MLflow 2.22.0 y Matplotlib instalados, ejecute `python scripts/present_metropt3.py` desde la raíz; el script verifica los IDs y las métricas de evaluación contra el JSON antes de registrar la presentación.
+
 ## Efecto de las señales en validación
 
 La media causal de tres lecturas y la tasa de cambio de presión se añadieron a las cuatro señales originales. En validación, el MAE de la RNN pasó de 0.284004 a 0.476307 bar (subió 67.71 %), mientras que el de la LSTM pasó de 0.353838 a 0.280736 bar (bajó 20.66 %). Son resultados de estas corridas, no una garantía general. La selección se hizo con validación, antes de consultar prueba. Véase [FASE03.md](docs/FASE03.md).
@@ -99,7 +108,7 @@ El servicio carga `outputs/metropt3_model` desde un montaje de solo lectura y no
 
 ### Distribución e instalación del modelo
 
-El paquete versionado `metropt3-inference-v1.0.0.zip` tiene SHA-256 **`2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f`**. Se preparó para adjuntarlo a una futura GitHub Release; todavía no hay Release ni enlace de descarga publicado. Una vez publicada, descargue el ZIP desde los activos de esa Release y verifique este hash obtenido de una fuente confiable. Hasta entonces, transfiera el ZIP local por un canal confiable. El manifiesto interno identifica el run, los commits de procedencia, el checkpoint y todos los archivos del modelo. El hash del ZIP es la referencia externa: los hashes dentro del ZIP por sí solos no autentican su origen. Solo cargue paquetes confiables: MLflow utiliza serialización de Python.
+El paquete versionado `metropt3-inference-v1.0.0.zip` tiene SHA-256 **`2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f`**. Descargue el ZIP desde los activos de la [Release v1.0.0](https://github.com/IsaacPerezPerez/metropt3-pressure-forecasting/releases/tag/v1.0.0) y verifique este hash. El manifiesto interno identifica el run, los commits de procedencia, el checkpoint y todos los archivos del modelo. El hash del ZIP es la referencia externa: los hashes dentro del ZIP por sí solos no autentican su origen. Solo cargue paquetes confiables: MLflow utiliza serialización de Python.
 
 En un clon limpio, con Python 3.11 y Docker Desktop, para instalar desde una ruta local y ejecutar únicamente la demo (sin dataset ni servidor MLflow):
 
@@ -125,4 +134,4 @@ El contenido exportado incluye el checkpoint, escalador, esquema, código y meta
 
 ### Pruebas y CI
 
-El workflow [CI CPU](.github/workflows/ci.yml) instala Python 3.11, dependencias y PyTorch CPU, y ejecuta `python -m unittest discover -s tests -v` y `pre-commit run --all-files` en cada push y pull request. Las pruebas usan datos sintéticos y no necesitan dataset, pesos ni tracking local; comprueban también la instalación y el rechazo de paquetes incorrectos. La comparación de la predicción real del ganador se realiza aparte mediante la integración Docker y el ZIP verificado: CI no la ejecuta. El workflow se agregó localmente y su ejecución remota está pendiente de un push autorizado.
+El workflow [CI CPU](.github/workflows/ci.yml) instala Python 3.11, dependencias y PyTorch CPU, y ejecuta `python -m unittest discover -s tests -v` y `pre-commit run --all-files` en cada push y pull request. Las pruebas usan datos sintéticos y no necesitan dataset, pesos ni tracking local; comprueban también la instalación y el rechazo de paquetes incorrectos. La comparación de la predicción real del ganador se realiza aparte mediante la integración Docker y el ZIP verificado: CI no la ejecuta. Consulte los resultados remotos en [GitHub Actions](https://github.com/IsaacPerezPerez/metropt3-pressure-forecasting/actions).

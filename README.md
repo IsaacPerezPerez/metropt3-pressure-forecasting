@@ -1,8 +1,43 @@
-# Pronóstico de presión industrial
+# Pronóstico de presión ferroviaria con MetroPT-3
 
-Proyecto universitario para pronosticar la presión de salida de los depósitos (`Reservoirs`, bar) de la unidad de producción de aire de un tren, usando MetroPT-3. El proyecto incluye preprocesamiento causal y comparación de RNN y LSTM en validación con Docker y MLflow. La fase 04 evalúa el modelo seleccionado en prueba e incorpora inferencia CPU.
+Pronóstico de la presión del depósito de aire de un tren a **5 minutos**, a partir de lecturas recientes de sensores. El proyecto compara RNN y LSTM con señales originales y derivadas, registra las corridas en MLflow y sirve el modelo ganador con Docker.
 
-La metodología, la cadencia, los cortes, los resultados de persistencia y el diseño causal están en [docs/AUDITORIA_METROPT3.md](docs/AUDITORIA_METROPT3.md). Los resultados de Beijing permanecen en el historial, hasta el commit `ab0673a`.
+## Resultado principal
+
+En **650 545 ventanas de prueba**, la LSTM ampliada obtuvo un **MAE de 0.364242 bar**, frente a **0.708209 bar** de persistencia. El error absoluto medio se redujo **48.57 %**. Persistencia pronostica que la presión se mantendrá en el último valor observado.
+
+[Descargar el modelo de la Release v1.0.0](https://github.com/IsaacPerezPerez/metropt3-pressure-forecasting/releases/tag/v1.0.0) · [Resultados de prueba](docs/RESULTADOS_FASE04.json) · [GitHub Actions](https://github.com/IsaacPerezPerez/metropt3-pressure-forecasting/actions)
+
+## Demo rápida en CPU
+
+El paquete versionado `metropt3-inference-v1.0.0.zip` tiene SHA-256 **`2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f`**. Descargue el ZIP desde los activos de la [Release v1.0.0](https://github.com/IsaacPerezPerez/metropt3-pressure-forecasting/releases/tag/v1.0.0) y verifique este hash. El manifiesto interno identifica el run, los commits de procedencia, el checkpoint y todos los archivos del modelo. El hash del ZIP es la referencia externa: los hashes dentro del ZIP por sí solos no autentican su origen. Solo cargue paquetes confiables: MLflow utiliza serialización de Python.
+
+En un clon limpio, con Python 3.11 y Docker Desktop, para instalar desde una ruta local y ejecutar únicamente la demo (sin dataset ni servidor MLflow):
+
+```powershell
+python scripts/release_metropt3.py install C:\ruta\metropt3-inference-v1.0.0.zip --sha256 2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f
+$env:INFERENCE_PORT = "18080" # elegir un puerto libre
+docker compose -f compose.inference.yaml up -d --build
+Invoke-RestMethod http://localhost:18080/health
+python scripts/example_request.py --url http://localhost:18080
+try { Invoke-RestMethod -Method Post -Uri http://localhost:18080/predict -ContentType 'application/json' -Body '{"readings":[]}' } catch { $_.ErrorDetails.Message }
+docker compose -f compose.inference.yaml down
+```
+
+La prueba independiente y sus comandos están en [VERIFICACION_RELEASE.md](docs/VERIFICACION_RELEASE.md). La respuesta válida esperada para el ejemplo es `prediction_bar = 8.821163177490234`, con tolerancia absoluta de **0.00001 bar** respecto al checkpoint de fase 04; la petición vacía devuelve HTTP 422. El instalador comprueba el hash antes de extraer, valida cada archivo y no sustituye un destino existente. El ZIP, el modelo, los checkpoints, el dataset y `mlruns/` permanecen fuera de Git.
+
+## Cómo está organizado
+
+| Ruta | Contenido |
+|---|---|
+| `scripts/` | Recuperación de datos, preprocesamiento, entrenamiento, evaluación y petición de ejemplo. |
+| `docs/` | Auditoría, resultados y verificación de la Release. |
+| `tests/` | Pruebas sintéticas del flujo. |
+| `data/raw/` y `.dvc/` | Descriptor y configuración de DVC. El dataset se recupera desde UCI. |
+| `compose*.yaml` y `Dockerfile*` | Entornos de entrenamiento e inferencia. |
+| `.github/workflows/` | Pruebas automáticas de GitHub Actions. |
+
+**Para reproducir el experimento**, sigue la recuperación de datos y las fases 02 a 04. Para mostrar las corridas ya guardadas, consulta el recorrido de MLflow en la fase 03.
 
 ## Fuente y procedencia
 
@@ -98,7 +133,7 @@ La reducción de MAE es **0.343967 bar (48.57 %)** respecto de persistencia. Val
 El endpoint `POST /predict` recibe `{"readings": [...]}` con exactamente 32 objetos, ordenados cronológicamente. Cada objeto contiene exclusivamente `timestamp` ISO 8601 sin zona horaria (por ejemplo `2020-07-01T00:00:00`), `Reservoirs` (bar), `Motor_current`, `Oil_temperature` y `COMP`, estos cuatro como números finitos. Los intervalos consecutivos deben estar entre 8 y 15 segundos inclusive; no deben cruzar los cortes 2020-04-01 o 2020-06-01. No se interpola. Las dos primeras lecturas aportan historia causal y las 30 restantes forman la entrada: media móvil de tres y diferencia de presión dividida por el intervalo real; después se aplica el escalador congelado. La salida incluye `prediction_bar`, `target`, `horizon_seconds`, `anchor_timestamp` y `forecast_timestamp` para t + 300 s. El ejemplo sintético de 32 filas se genera y envía sin dependencias adicionales:
 
 ```powershell
-# Primero instale el ZIP como se indica en la siguiente sección.
+# Primero instale el ZIP como se indica en la sección «Demo rápida en CPU».
 docker compose -f compose.inference.yaml up -d --build
 Invoke-RestMethod http://localhost:8000/health
 python scripts/example_request.py
@@ -106,23 +141,7 @@ python scripts/example_request.py
 
 El servicio carga `outputs/metropt3_model` desde un montaje de solo lectura y no requiere servidor de tracking, dataset ni GPU. La imagen se construye con Python público y PyTorch CPU. La comparación de la petición de ejemplo contra el checkpoint local usa tolerancia absoluta de 0.00001 bar; la verificación observada y el rechazo HTTP 422 están en [VERIFICACION_FASE04.json](docs/VERIFICACION_FASE04.json). Para detenerlo: `docker compose -f compose.inference.yaml down`.
 
-### Distribución e instalación del modelo
-
-El paquete versionado `metropt3-inference-v1.0.0.zip` tiene SHA-256 **`2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f`**. Descargue el ZIP desde los activos de la [Release v1.0.0](https://github.com/IsaacPerezPerez/metropt3-pressure-forecasting/releases/tag/v1.0.0) y verifique este hash. El manifiesto interno identifica el run, los commits de procedencia, el checkpoint y todos los archivos del modelo. El hash del ZIP es la referencia externa: los hashes dentro del ZIP por sí solos no autentican su origen. Solo cargue paquetes confiables: MLflow utiliza serialización de Python.
-
-En un clon limpio, con Python 3.11 y Docker Desktop, para instalar desde una ruta local y ejecutar únicamente la demo (sin dataset ni servidor MLflow):
-
-```powershell
-python scripts/release_metropt3.py install C:\ruta\metropt3-inference-v1.0.0.zip --sha256 2002146f6b2899988d0e3178262251fb8b0ccd913e183a274b2b8fb8fd91332f
-$env:INFERENCE_PORT = "18080" # elegir un puerto libre
-docker compose -f compose.inference.yaml up -d --build
-Invoke-RestMethod http://localhost:18080/health
-python scripts/example_request.py --url http://localhost:18080
-try { Invoke-RestMethod -Method Post -Uri http://localhost:18080/predict -ContentType 'application/json' -Body '{"readings":[]}' } catch { $_.ErrorDetails.Message }
-docker compose -f compose.inference.yaml down
-```
-
-La prueba independiente y sus comandos están en [VERIFICACION_RELEASE.md](docs/VERIFICACION_RELEASE.md). La respuesta válida esperada para el ejemplo es `prediction_bar = 8.821163177490234`, con tolerancia absoluta de **0.00001 bar** respecto al checkpoint de fase 04; la petición vacía devuelve HTTP 422. El instalador comprueba el hash antes de extraer, valida cada archivo y no sustituye un destino existente. El ZIP, el modelo, los checkpoints, el dataset y `mlruns/` permanecen fuera de Git.
+### Reconstrucción del paquete de inferencia
 
 Para reconstruir el ZIP a partir del modelo exportado local verificado (compruebe el SHA-256 resultante; las versiones de compresión pueden afectarlo):
 
